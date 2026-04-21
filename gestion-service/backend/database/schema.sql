@@ -23,9 +23,12 @@ CREATE TABLE agents (
   poste         VARCHAR(100),
   service       VARCHAR(100),
   telephone     VARCHAR(20),
+  email         VARCHAR(150) UNIQUE,
+  utilisateur_id INT UNIQUE,
   date_embauche DATE,
   statut        ENUM('actif','conge','suspendu') NOT NULL DEFAULT 'actif',
-  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE tableaux_service (
@@ -63,18 +66,68 @@ CREATE TABLE elements_variables (
   FOREIGN KEY (valide_par) REFERENCES utilisateurs(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, role)
-VALUES (
-  'Admin',
-  'Système',
-  'admin@aeroport.ma',
-  '$2b$10$dY/zr7sZzVqqOaoxkJCXr..0.E0.3BAn7F.WAfF3HNsZu82ZUO/AO',
-  'admin'
-);
+INSERT INTO utilisateurs (id, nom, prenom, email, mot_de_passe, role)
+VALUES
+  (
+    1,
+    'Admin',
+    'Système',
+    'admin@aeroport.ma',
+    '$2b$10$dY/zr7sZzVqqOaoxkJCXr..0.E0.3BAn7F.WAfF3HNsZu82ZUO/AO',
+    'admin'
+  ),
+  (
+    2,
+    'El Amrani',
+    'Nadia',
+    'superviseur@aeroport.ma',
+    '$2b$10$dY/zr7sZzVqqOaoxkJCXr..0.E0.3BAn7F.WAfF3HNsZu82ZUO/AO',
+    'superviseur'
+  ),
+  (
+    3,
+    'Benali',
+    'Karim',
+    'karim.benali@aeroport.ma',
+    '$2b$10$dY/zr7sZzVqqOaoxkJCXr..0.E0.3BAn7F.WAfF3HNsZu82ZUO/AO',
+    'agent'
+  ),
+  (
+    4,
+    'Ouali',
+    'Fatima',
+    'fatima.ouali@aeroport.ma',
+    '$2b$10$dY/zr7sZzVqqOaoxkJCXr..0.E0.3BAn7F.WAfF3HNsZu82ZUO/AO',
+    'agent'
+  ),
+  (
+    5,
+    'Haddad',
+    'Youssef',
+    'youssef.haddad@aeroport.ma',
+    '$2b$10$dY/zr7sZzVqqOaoxkJCXr..0.E0.3BAn7F.WAfF3HNsZu82ZUO/AO',
+    'agent'
+  ),
+  (
+    6,
+    'Chraibi',
+    'Sara',
+    'sara.chraibi@aeroport.ma',
+    '$2b$10$dY/zr7sZzVqqOaoxkJCXr..0.E0.3BAn7F.WAfF3HNsZu82ZUO/AO',
+    'agent'
+  ),
+  (
+    7,
+    'Moussaoui',
+    'Ahmed',
+    'ahmed.moussaoui@aeroport.ma',
+    '$2b$10$dY/zr7sZzVqqOaoxkJCXr..0.E0.3BAn7F.WAfF3HNsZu82ZUO/AO',
+    'agent'
+  );
 
-INSERT INTO agents (matricule, nom, prenom, poste, service, date_embauche, statut) VALUES
-('AG001', 'Benali', 'Karim', 'Agent de piste', 'Opérations', '2020-03-15', 'actif'),
-('AG002', 'Ouali', 'Fatima', 'Hôtesse d accueil', 'Accueil', '2019-07-01', 'actif'),
-('AG003', 'Haddad', 'Youssef', 'Technicien', 'Maintenance', '2021-01-10', 'actif'),
-('AG004', 'Chraibi', 'Sara', 'Agent sécurité', 'Sécurité', '2018-11-20', 'conge'),
-('AG005', 'Moussaoui', 'Ahmed', 'Chef d équipe', 'Opérations', '2017-05-05', 'actif');
+INSERT INTO agents (matricule, nom, prenom, poste, service, telephone, email, utilisateur_id, date_embauche, statut) VALUES
+('AG001', 'Benali', 'Karim', 'Agent de piste', 'Opérations', NULL, 'karim.benali@aeroport.ma', 3, '2020-03-15', 'actif'),
+('AG002', 'Ouali', 'Fatima', 'Hôtesse d accueil', 'Accueil', NULL, 'fatima.ouali@aeroport.ma', 4, '2019-07-01', 'actif'),
+('AG003', 'Haddad', 'Youssef', 'Technicien', 'Maintenance', NULL, 'youssef.haddad@aeroport.ma', 5, '2021-01-10', 'actif'),
+('AG004', 'Chraibi', 'Sara', 'Agent sécurité', 'Sécurité', NULL, 'sara.chraibi@aeroport.ma', 6, '2018-11-20', 'conge'),
+('AG005', 'Moussaoui', 'Ahmed', 'Chef d équipe', 'Opérations', NULL, 'ahmed.moussaoui@aeroport.ma', 7, '2017-05-05', 'actif');

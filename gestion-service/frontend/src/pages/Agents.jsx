@@ -9,6 +9,7 @@ const initialForm = {
   matricule: '',
   nom: '',
   prenom: '',
+  email: '',
   poste: '',
   service: '',
   telephone: '',
@@ -20,6 +21,12 @@ const statusClasses = {
   actif: 'bg-green-100 text-green-800',
   conge: 'bg-yellow-100 text-yellow-800',
   suspendu: 'bg-red-100 text-red-800'
+};
+
+const accountClasses = {
+  actif: 'bg-green-100 text-green-800',
+  inactif: 'bg-gray-100 text-gray-700',
+  absent: 'bg-yellow-100 text-yellow-800'
 };
 
 const AgentModal = ({
@@ -44,7 +51,9 @@ const AgentModal = ({
             <h3 className="text-xl font-semibold text-gray-900">
               {mode === 'create' ? 'Ajouter un agent' : "Modifier l'agent"}
             </h3>
-            <p className="mt-1 text-sm text-gray-500">Les champs marqués d&apos;un * sont obligatoires.</p>
+            <p className="mt-1 text-sm text-gray-500">
+              Les champs marqués d&apos;un * sont obligatoires. L&apos;email sert à créer ou lier le compte de connexion.
+            </p>
           </div>
           <button type="button" onClick={onClose} className="text-2xl leading-none text-gray-400">
             ×
@@ -107,6 +116,21 @@ const AgentModal = ({
               />
               {errors.prenom && <p className="mt-1 text-sm text-red-600">{errors.prenom}</p>}
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email professionnel *</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={onChange}
+              className={`w-full rounded-md border px-3 py-2 outline-none focus:ring-2 ${
+                errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+              }`}
+              placeholder="prenom.nom@aeroport.ma"
+            />
+            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -175,6 +199,44 @@ const AgentModal = ({
   );
 };
 
+const CredentialsModal = ({ credentials, isOpen, onClose }) => {
+  if (!isOpen || !credentials) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4" onClick={onClose}>
+      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+        <h3 className="text-xl font-semibold text-gray-900">Compte agent généré</h3>
+        <p className="mt-3 text-sm text-gray-600">
+          Conservez ces identifiants maintenant. Le mot de passe temporaire n&apos;est affiché qu&apos;une seule fois.
+        </p>
+
+        <div className="mt-5 space-y-3 rounded-lg border border-blue-100 bg-blue-50 p-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-800">Email</p>
+            <p className="mt-1 break-all text-sm font-medium text-gray-900">{credentials.email}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-800">Mot de passe temporaire</p>
+            <p className="mt-1 text-lg font-bold tracking-wide text-gray-900">{credentials.mot_de_passe_temporaire}</p>
+          </div>
+        </div>
+
+        <p className="mt-4 text-sm text-amber-700">
+          Bonne pratique: demandez à l&apos;agent de modifier son mot de passe après sa première connexion.
+        </p>
+
+        <div className="mt-6 flex justify-end">
+          <button type="button" onClick={onClose} className="rounded-md bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700">
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const DeleteModal = ({ agent, isOpen, loading, onClose, onConfirm }) => {
   if (!isOpen || !agent) {
     return null;
@@ -219,6 +281,8 @@ const Agents = () => {
   const [formMode, setFormMode] = useState('create');
   const [formData, setFormData] = useState(initialForm);
   const [errors, setErrors] = useState({});
+  const [generatedCredentials, setGeneratedCredentials] = useState(null);
+  const [credentialsModalOpen, setCredentialsModalOpen] = useState(false);
 
   const canManage = user && ['admin', 'superviseur'].includes(user.role);
   const canDelete = user?.role === 'admin';
@@ -275,6 +339,7 @@ const Agents = () => {
       matricule: agent.matricule || '',
       nom: agent.nom || '',
       prenom: agent.prenom || '',
+      email: agent.email || '',
       poste: agent.poste || '',
       service: agent.service || '',
       telephone: agent.telephone || '',
@@ -299,6 +364,12 @@ const Agents = () => {
       nextErrors.prenom = 'Le prénom est requis';
     }
 
+    if (!formData.email.trim()) {
+      nextErrors.email = "L'email est requis";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      nextErrors.email = 'Email invalide';
+    }
+
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -315,18 +386,26 @@ const Agents = () => {
     try {
       const payload = {
         ...formData,
+        email: formData.email.trim(),
         poste: formData.poste || null,
         service: formData.service || null,
         telephone: formData.telephone || null,
         date_embauche: formData.date_embauche || null
       };
 
+      let operationResult;
+
       if (formMode === 'create') {
-        await agentService.create(payload);
-        showToast('Agent ajouté avec succès');
+        operationResult = await agentService.create(payload);
+        showToast(operationResult.message || 'Agent ajouté avec succès');
       } else {
-        await agentService.update(selectedAgent.id, payload);
-        showToast('Agent mis à jour avec succès');
+        operationResult = await agentService.update(selectedAgent.id, payload);
+        showToast(operationResult.message || 'Agent mis à jour avec succès');
+      }
+
+      if (operationResult?.compte?.mot_de_passe_temporaire) {
+        setGeneratedCredentials(operationResult.compte);
+        setCredentialsModalOpen(true);
       }
 
       setModalOpen(false);
@@ -443,8 +522,10 @@ const Agents = () => {
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Matricule</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Nom</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Prénom</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Email</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Poste</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Service</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Compte</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Statut</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Actions</th>
               </tr>
@@ -452,13 +533,13 @@ const Agents = () => {
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-4 py-10 text-center text-gray-500">
+                  <td colSpan="9" className="px-4 py-10 text-center text-gray-500">
                     Chargement des agents...
                   </td>
                 </tr>
               ) : agents.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-4 py-10 text-center text-gray-500">
+                  <td colSpan="9" className="px-4 py-10 text-center text-gray-500">
                     Aucun agent trouvé pour ces critères.
                   </td>
                 </tr>
@@ -468,8 +549,18 @@ const Agents = () => {
                     <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">{agent.matricule}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">{agent.nom}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">{agent.prenom}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">{agent.email || '-'}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">{agent.poste || '-'}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">{agent.service || '-'}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm">
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        agent.compte_cree
+                          ? accountClasses[agent.compte_actif ? 'actif' : 'inactif']
+                          : accountClasses.absent
+                      }`}>
+                        {agent.compte_cree ? (agent.compte_actif ? 'Créé' : 'Inactif') : 'Absent'}
+                      </span>
+                    </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
                       <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClasses[agent.statut] || 'bg-gray-100 text-gray-800'}`}>
                         {agent.statut}
@@ -564,6 +655,15 @@ const Agents = () => {
           setSelectedAgent(null);
         }}
         onConfirm={handleDelete}
+      />
+
+      <CredentialsModal
+        credentials={generatedCredentials}
+        isOpen={credentialsModalOpen}
+        onClose={() => {
+          setCredentialsModalOpen(false);
+          setGeneratedCredentials(null);
+        }}
       />
 
       {toast.show && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}

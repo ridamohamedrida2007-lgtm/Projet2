@@ -1,44 +1,47 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const navigation = [
-  {
-    to: '/dashboard',
-    label: 'Tableau de bord',
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-        <path d="M4 13h6V4H4v9zM14 20h6v-7h-6v7zM14 10h6V4h-6v6zM4 20h6v-3H4v3z" />
-      </svg>
-    )
-  },
-  {
-    to: '/agents',
-    label: 'Agents',
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 11A3.5 3.5 0 1 0 9.5 4a3.5 3.5 0 0 0 0 7zm9.5 10v-2a4 4 0 0 0-3-3.87M15 4.13a3.5 3.5 0 0 1 0 6.74" />
-      </svg>
-    )
-  },
-  {
-    to: '/planning',
-    label: 'Planning',
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-        <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
-      </svg>
-    )
-  },
-  {
-    to: '/elements-variables',
-    label: 'Éléments Variables',
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
-        <path d="M4 19h16M7 16V8M12 16V5M17 16v-6" />
-      </svg>
-    )
-  }
-];
+const dashboardIcon = (
+  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
+    <path d="M4 13h6V4H4v9zM14 20h6v-7h-6v7zM14 10h6V4h-6v6zM4 20h6v-3H4v3z" />
+  </svg>
+);
+
+const agentIcon = (
+  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 11A3.5 3.5 0 1 0 9.5 4a3.5 3.5 0 0 0 0 7zm9.5 10v-2a4 4 0 0 0-3-3.87M15 4.13a3.5 3.5 0 0 1 0 6.74" />
+  </svg>
+);
+
+const planningIcon = (
+  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
+    <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+  </svg>
+);
+
+const variableIcon = (
+  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
+    <path d="M4 19h16M7 16V8M12 16V5M17 16v-6" />
+  </svg>
+);
+
+const navigationByRole = {
+  admin: [
+    { to: '/dashboard', label: 'Pilotage global', icon: dashboardIcon },
+    { to: '/agents', label: 'Agents', icon: agentIcon },
+    { to: '/planning', label: 'Planning', icon: planningIcon },
+    { to: '/elements-variables', label: 'Éléments Variables', icon: variableIcon }
+  ],
+  superviseur: [
+    { to: '/dashboard', label: 'Supervision', icon: dashboardIcon },
+    { to: '/agents', label: 'Équipe', icon: agentIcon },
+    { to: '/planning', label: 'Planning', icon: planningIcon },
+    { to: '/elements-variables', label: 'Variables', icon: variableIcon }
+  ],
+  agent: [
+    { to: '/dashboard', label: 'Mon espace', icon: dashboardIcon }
+  ]
+};
 
 const getInitials = (user) => {
   if (!user) {
@@ -50,6 +53,7 @@ const getInitials = (user) => {
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
+  const navigation = navigationByRole[user?.role] || navigationByRole.agent;
 
   return (
     <>
